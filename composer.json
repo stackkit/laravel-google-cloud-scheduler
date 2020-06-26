@@ -20,7 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Stackkit\\LaravelGoogleCloudTasksQueue\\": "src/"
+            "Stackkit\\LaravelGoogleCloudScheduler\\": "src/"
         }
     },
     "autoload-dev": {
@@ -31,7 +31,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Stackkit\\LaravelGoogleCloudTasksQueue\\CloudTasksServiceProvider"
+                "Stackkit\\LaravelGoogleCloudScheduler\\CloudSchedulerServiceProvider"
             ]
         }
     }

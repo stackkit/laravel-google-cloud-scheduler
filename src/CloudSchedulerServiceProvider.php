@@ -4,7 +4,6 @@ namespace Stackkit\LaravelGoogleCloudScheduler;
 
 use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use Illuminate\Routing\Router;
-use Stackkit\LaravelGoogleCloudTasksQueue\TaskHandler;
 
 class CloudSchedulerServiceProvider extends LaravelServiceProvider
 {
@@ -15,6 +14,6 @@ class CloudSchedulerServiceProvider extends LaravelServiceProvider
 
     private function registerRoutes(Router $router)
     {
-        $router->post('handle-task', [TaskHandler::class, 'handle']);
+        $router->post('cloud-scheduler-job', [TaskHandler::class, 'handle']);
     }
 }
