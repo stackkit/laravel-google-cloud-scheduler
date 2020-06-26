@@ -11,7 +11,11 @@
 
 This package allows you to use Google Cloud Scheduler to schedule Laravel commands.
 
+It only supports Artisan commands at this time due to security concerns.
+
 # How it works
+
+Cloud Tasks will make a HTTP call to your application. This package adds an endpoint to your application that accepts the HTTP call and its payload (an Artisan command) and executes the command.
 
 # Requirements
 
@@ -34,3 +38,18 @@ Please check the table below for supported Laravel and PHP versions:
 ```bash
 composer require stackkit/laravel-google-cloud-scheduler
 ```
+
+# Cloud Scheduler Example
+
+Here is an example job that will run `php artisan inspire` every minute.
+
+These are the most important settings:
+- Target must be `HTTP`
+- URL must be `yourdomainname.com/cloud-scheduler-job`
+- Auth header must be OIDC token!
+
+<img src="/example.png">
+
+# Planned features
+
+Laravel's console kernel allows to execute actions after the command has finished running (such as ping a service) and prevent overlapping. This package does not support those features at this time. The goal is to eventually read the configured settings for a command (as defined in the console kernel) and execute the command exacty as defined there  so that methods like `thenPing` and `withoutOverlapping` work out of the box without the need to configure anything.
