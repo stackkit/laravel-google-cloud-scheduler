@@ -17,11 +17,33 @@ class OpenIdVerificator
 
     private $guzzle;
     private $rsa;
+    private $jwt;
 
-    public function __construct(Client $guzzle, RSA $rsa)
+    public function __construct(Client $guzzle, RSA $rsa, JWT $jwt)
     {
         $this->guzzle = $guzzle;
         $this->rsa = $rsa;
+        $this->jwt = $jwt;
+    }
+
+    public function guardAgainstInvalidOpenIdToken($token)
+    {
+        $kid = $this->getKidFromOpenIdToken($token);
+        $publicKey = $this->getPublicKey($kid);
+
+        $decodedToken = $this->jwt->decode($token, $publicKey, ['RS256']);
+
+        /**
+         * https://developers.google.com/identity/protocols/oauth2/openid-connect#validatinganidtoken
+         */
+
+        if (!in_array($decodedToken->iss, ['https://accounts.google.com', 'accounts.google.com'])) {
+            throw new CloudSchedulerException('The given OpenID token is not valid');
+        }
+
+        if ($decodedToken->exp < time()) {
+            throw new CloudSchedulerException('The given OpenID token has expired');
+        }
     }
 
     public function getPublicKey($kid = null)
