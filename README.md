@@ -61,3 +61,13 @@ These are the most important settings:
 # Planned features
 
 Laravel's console kernel allows to execute actions after the command has finished running (such as ping a service) and prevent overlapping. This package does not support those features at this time. The goal is to eventually read the configured settings for a command (as defined in the console kernel) and execute the command exacty as defined there  so that methods like `thenPing` and `withoutOverlapping` work out of the box without the need to configure anything.
+
+# Security
+
+The job handler requires each request to have an OpenID token. Cloud Scheduler will generate an OpenID token and send it along with the job payload to the handler.
+
+This package verifies that the token is digitally signed by Google and that it's meant for your application. Only Google Scheduler will be able to call your handler.
+
+More information about OpenID Connect:
+
+https://developers.google.com/identity/protocols/oauth2/openid-connect
