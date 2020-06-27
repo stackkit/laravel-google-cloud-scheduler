@@ -10,6 +10,7 @@ use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
 use Stackkit\LaravelGoogleCloudScheduler\Command;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 use Stackkit\LaravelGoogleCloudScheduler\TaskHandler;
+use Throwable;
 
 class TaskHandlerTest extends TestCase
 {
@@ -43,6 +44,7 @@ class TaskHandlerTest extends TestCase
     {
         $this->fakeCommand->shouldReceive('capture')->andReturn('env');
         $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeToken')->andReturnNull();
 
         $output = $this->taskHandler->handle();
 
@@ -72,7 +74,61 @@ class TaskHandlerTest extends TestCase
         $this->request->headers->add(['Authorization' => 'Bearer ' . $dummyJwt]);
 
         $this->expectException(CloudSchedulerException::class);
-        $this->expectExceptionMessage('Unauthorized');
+        $this->expectExceptionMessage('Could not decode token');
+
+        $this->taskHandler->handle();
+    }
+
+    /** @test */
+    public function the_issue_identifier_should_be_google()
+    {
+        $this->expectExceptionMessage('The given OpenID token is not valid');
+
+        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+            'iss' => 'accounts.not-google.com',
+        ]);
+
+        $this->taskHandler->handle();
+    }
+
+    /** @test */
+    public function the_token_must_not_be_expired()
+    {
+        $this->expectExceptionMessage('The given OpenID token has expired');
+
+        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+            'iss' => 'accounts.google.com',
+            'exp' => time() - 10,
+        ]);
+
+        $this->taskHandler->handle();
+    }
+
+    /** @test */
+    public function the_aud_claim_must_be_the_same_as_the_app_id()
+    {
+        config()->set('laravel-google-cloud-scheduler.app_url', 'my-application.com');
+        $this->fakeCommand->shouldReceive('capture')->andReturn('env');
+        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+            'iss' => 'accounts.google.com',
+            'exp' => time() + 10,
+            'aud' => 'my-application.com',
+        ])->byDefault();
+
+        try {
+            $this->taskHandler->handle();
+        } catch (Throwable $e) {
+            $this->fail('The command should not have thrown an exception');
+        }
+
+        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+            'iss' => 'accounts.google.com',
+            'exp' => time() + 10,
+            'aud' => 'my-other-application.com',
+        ]);
+
+        $this->expectException(CloudSchedulerException::class);
+        $this->expectExceptionMessage('The given OpenID token is not valid');
 
         $this->taskHandler->handle();
     }

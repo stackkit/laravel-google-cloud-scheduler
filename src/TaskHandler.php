@@ -4,7 +4,6 @@ namespace Stackkit\LaravelGoogleCloudScheduler;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Throwable;
 
 class TaskHandler
 {
@@ -46,11 +45,9 @@ class TaskHandler
 
         $openIdToken = $this->request->bearerToken();
 
-        try {
-            $this->openId->guardAgainstInvalidOpenIdToken($openIdToken);
-        } catch (Throwable $e) {
-            throw new CloudSchedulerException('Unauthorized');
-        }
+        $decodedToken = $this->openId->decodeToken($openIdToken);
+
+        $this->openId->guardAgainstInvalidOpenIdToken($decodedToken);
     }
 
     private function cleanOutput($output)

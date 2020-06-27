@@ -8,6 +8,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use phpseclib\Crypt\RSA;
 use phpseclib\Math\BigInteger;
+use Throwable;
 
 class OpenIdVerificator
 {
@@ -26,13 +27,8 @@ class OpenIdVerificator
         $this->jwt = $jwt;
     }
 
-    public function guardAgainstInvalidOpenIdToken($token)
+    public function guardAgainstInvalidOpenIdToken($decodedToken)
     {
-        $kid = $this->getKidFromOpenIdToken($token);
-        $publicKey = $this->getPublicKey($kid);
-
-        $decodedToken = $this->jwt->decode($token, $publicKey, ['RS256']);
-
         /**
          * https://developers.google.com/identity/protocols/oauth2/openid-connect#validatinganidtoken
          */
@@ -43,6 +39,22 @@ class OpenIdVerificator
 
         if ($decodedToken->exp < time()) {
             throw new CloudSchedulerException('The given OpenID token has expired');
+        }
+
+        if ($decodedToken->aud !== config('laravel-google-cloud-scheduler.app_url')) {
+            throw new CloudSchedulerException('The given OpenID token is not valid');
+        }
+    }
+
+    public function decodeToken($token)
+    {
+        try {
+            $kid = $this->getKidFromOpenIdToken($token);
+            $publicKey = $this->getPublicKey($kid);
+
+            return $this->jwt->decode($token, $publicKey, ['RS256']);
+        } catch (Throwable $e) {
+            throw new CloudSchedulerException('Could not decode token');
         }
     }
 

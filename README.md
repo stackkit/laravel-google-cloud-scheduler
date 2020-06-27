@@ -41,13 +41,19 @@ Please check the table below for supported Laravel and PHP versions:
 composer require stackkit/laravel-google-cloud-scheduler
 ```
 
+(2) Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
+
+```
+STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
+```
+
 # Cloud Scheduler Example
 
 Here is an example job that will run `php artisan inspire` every minute.
 
 These are the most important settings:
 - Target must be `HTTP`
-- URL must be `yourdomainname.com/cloud-scheduler-job`
+- URL must be `https://yourdomainname.com/cloud-scheduler-job`
 - Auth header must be OIDC token!
 
 <img src="/example.png">
