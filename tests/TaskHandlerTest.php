@@ -4,6 +4,8 @@ namespace Tests;
 
 use Firebase\JWT\JWT;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
@@ -35,7 +37,9 @@ class TaskHandlerTest extends TestCase
             $this->fakeCommand,
             $this->request,
             $this->openId,
-            app(JWT::class)
+            app(Kernel::class),
+            app(Schedule::class),
+            Container::getInstance()
         );
     }
 
