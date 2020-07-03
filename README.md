@@ -19,6 +19,10 @@ It only supports Artisan commands at this time due to security concerns.
 
 Cloud Tasks will make a HTTP call to your application. This package adds an endpoint to your application that accepts the HTTP call and its payload (an Artisan command) and executes the command.
 
+#### withoutOverlapping, before, after, onSuccess, thenPing, etc
+
+All these features are supported. This package scans your console kernel (`app/Console/Kernel.php`) to see if the scheduled command in Cloud Scheduler is also scheduled in the console kernel, If it is, it will respect all configured events/hooks associated with the command. (such as withoutOverlapping) 
+
 # Requirements
 
 This package requires Laravel 5.6 or higher.
@@ -57,10 +61,6 @@ These are the most important settings:
 - Auth header must be OIDC token!
 
 <img src="/example.png">
-
-# Planned features
-
-Laravel's console kernel allows to execute actions after the command has finished running (such as ping a service) and prevent overlapping. This package does not support those features at this time. The goal is to eventually read the configured settings for a command (as defined in the console kernel) and execute the command exacty as defined there  so that methods like `thenPing` and `withoutOverlapping` work out of the box without the need to configure anything.
 
 # Security
 
