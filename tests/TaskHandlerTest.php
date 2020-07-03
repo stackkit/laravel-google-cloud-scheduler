@@ -156,7 +156,7 @@ class TaskHandlerTest extends TestCase
         $command = ConsoleApplication::formatCommandString('test:command');
         $mutex = 'framework'.DIRECTORY_SEPARATOR.'schedule-'.sha1($expression.$command);
 
-        cache()->add($mutex, true);
+        cache()->add($mutex, true, 60);
 
         $this->taskHandler->handle();
 
