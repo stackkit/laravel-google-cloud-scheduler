@@ -3,6 +3,7 @@
 namespace Tests\Support;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class TestCommand2 extends Command
 {
@@ -12,6 +13,6 @@ class TestCommand2 extends Command
 
     public function handle()
     {
-        logger('did something testy');
+        Log::debug('did something testy');
     }
 }

@@ -4,6 +4,7 @@ namespace Tests\Support;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
@@ -16,9 +17,9 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('test:command')->withoutOverlapping();
         $schedule->command('test:command2')->before(function () {
-            logger()->info('log after');
+            Log::info('log after');
         })->after(function () {
-            logger()->warning('log before');
+            Log::warning('log before');
         });
     }
 }
