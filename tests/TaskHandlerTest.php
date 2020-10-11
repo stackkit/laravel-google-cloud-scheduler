@@ -3,7 +3,10 @@
 namespace Tests;
 
 use Firebase\JWT\JWT;
+use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
@@ -11,6 +14,7 @@ use Stackkit\LaravelGoogleCloudScheduler\Command;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 use Stackkit\LaravelGoogleCloudScheduler\TaskHandler;
 use Throwable;
+use TiMacDonald\Log\LogFake;
 
 class TaskHandlerTest extends TestCase
 {
@@ -35,7 +39,9 @@ class TaskHandlerTest extends TestCase
             $this->fakeCommand,
             $this->request,
             $this->openId,
-            app(JWT::class)
+            app(Kernel::class),
+            app(Schedule::class),
+            Container::getInstance()
         );
     }
 
@@ -131,5 +137,47 @@ class TaskHandlerTest extends TestCase
         $this->expectExceptionMessage('The given OpenID token is not valid');
 
         $this->taskHandler->handle();
+    }
+
+    /** @test */
+    public function it_prevents_overlapping_if_the_command_is_scheduled_without_overlapping()
+    {
+        $this->fakeCommand->shouldReceive('capture')->andReturn('test:command');
+        $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeToken')->andReturnNull();
+
+        cache()->clear();
+
+        Log::shouldReceive('debug')->twice();
+
+        $this->taskHandler->handle();
+
+        $expression = '* * * * *';
+        $command = ConsoleApplication::formatCommandString('test:command');
+        $mutex = 'framework'.DIRECTORY_SEPARATOR.'schedule-'.sha1($expression.$command);
+
+        cache()->add($mutex, true, 60);
+
+        $this->taskHandler->handle();
+
+        cache()->delete($mutex);
+
+        $this->taskHandler->handle();
+    }
+
+    /** @test */
+    public function it_runs_the_before_and_after_callbacks()
+    {
+        $this->fakeCommand->shouldReceive('capture')->andReturn('test:command2');
+        $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeToken')->andReturnNull();
+
+        Log::swap(new LogFake());
+
+        $this->taskHandler->handle();
+
+        Log::assertLoggedMessage('info', 'log after');
+        Log::assertLoggedMessage('warning', 'log before');
+        Log::assertLoggedMessage('debug', 'did something testy');
     }
 }

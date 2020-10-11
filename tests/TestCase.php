@@ -2,6 +2,10 @@
 
 namespace Tests;
 
+use Illuminate\Console\Scheduling\Schedule;
+use Tests\Support\Kernel;
+use Tests\Support\TestCommand;
+
 class TestCase extends \Orchestra\Testbench\TestCase
 {
     /**
@@ -29,6 +33,9 @@ class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-        //
+        $app->singleton(
+            \Illuminate\Contracts\Console\Kernel::class,
+            Kernel::class
+        );
     }
 }
