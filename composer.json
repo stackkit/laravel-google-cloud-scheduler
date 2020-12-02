@@ -12,8 +12,7 @@
         "google/cloud-scheduler": "^1.4",
         "firebase/php-jwt": "^5.2",
         "phpseclib/phpseclib": "~2.0",
-        "laravel/framework": "8.*",
-        "orchestra/testbench": "6.*"
+        "laravel/framework": "8.*"
     },
     "require-dev": {
         "mockery/mockery": "^1.2",
