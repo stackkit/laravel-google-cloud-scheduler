@@ -2,7 +2,9 @@
 
 namespace Stackkit\LaravelGoogleCloudScheduler;
 
+use Carbon\Carbon;
 use Firebase\JWT\JWT;
+use Firebase\JWT\SignatureInvalidException;
 use GuzzleHttp\Client;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -19,6 +21,7 @@ class OpenIdVerificator
     private $guzzle;
     private $rsa;
     private $jwt;
+    private $maxAge = [];
 
     public function __construct(Client $guzzle, RSA $rsa, JWT $jwt)
     {
@@ -32,7 +35,6 @@ class OpenIdVerificator
         /**
          * https://developers.google.com/identity/protocols/oauth2/openid-connect#validatinganidtoken
          */
-
         if (!in_array($decodedToken->iss, ['https://accounts.google.com', 'accounts.google.com'])) {
             throw new CloudSchedulerException('The given OpenID token is not valid');
         }
@@ -46,30 +48,40 @@ class OpenIdVerificator
         }
     }
 
-    public function decodeToken($token)
+    public function decodeOpenIdToken($openIdToken, $kid, $cache = true)
     {
-        try {
-            $kid = $this->getKidFromOpenIdToken($token);
-            $publicKey = $this->getPublicKey($kid);
+        if (!$cache) {
+            $this->forgetFromCache();
+        }
 
-            return $this->jwt->decode($token, $publicKey, ['RS256']);
-        } catch (Throwable $e) {
-            throw new CloudSchedulerException('Could not decode token');
+        $publicKey = $this->getPublicKey($kid);
+
+        try {
+            return $this->jwt->decode($openIdToken, $publicKey, ['RS256']);
+        } catch (SignatureInvalidException $e) {
+            if (!$cache) {
+                throw $e;
+            }
+
+            return $this->decodeOpenIdToken($openIdToken, $kid, false);
         }
     }
 
     public function getPublicKey($kid = null)
     {
-        $v3Certs = Cache::rememberForever(self::V3_CERTS, function () {
-            return $this->getv3Certs();
-        });
+        if (Cache::has(self::V3_CERTS)) {
+            $v3Certs = Cache::get(self::V3_CERTS);
+        } else {
+            $v3Certs = $this->getFreshCertificates();
+            Cache::put(self::V3_CERTS, $v3Certs, Carbon::now()->addSeconds($this->maxAge[self::URL_OPENID_CONFIG]));
+        }
 
         $cert = $kid ? collect($v3Certs)->firstWhere('kid', '=', $kid) : $v3Certs[0];
 
         return $this->extractPublicKeyFromCertificate($cert);
     }
 
-    private function getv3Certs()
+    private function getFreshCertificates()
     {
         $jwksUri =  $this->callApiAndReturnValue(self::URL_OPENID_CONFIG, 'jwks_uri');
 
@@ -97,11 +109,24 @@ class OpenIdVerificator
 
         $data = json_decode($response->getBody(), true);
 
+        $maxAge = 0;
+        foreach ($response->getHeader('Cache-Control') as $line) {
+            preg_match('/max-age=(\d+)/', $line, $matches);
+            $maxAge = isset($matches[1]) ? (int) $matches[1] : 0;
+        }
+
+        $this->maxAge[$url] = $maxAge;
+
         return Arr::get($data, $value);
     }
 
     public function isCached()
     {
         return Cache::has(self::V3_CERTS);
+    }
+
+    public function forgetFromCache()
+    {
+        Cache::forget(self::V3_CERTS);
     }
 }

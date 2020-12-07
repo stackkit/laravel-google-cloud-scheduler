@@ -33,6 +33,12 @@ class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
+        foreach (glob(storage_path('framework/cache/data/*/*/*')) as $file) {
+            unlink($file);
+        }
+
+        $app['config']->set('cache.default', 'file');
+
         $app->singleton(
             \Illuminate\Contracts\Console\Kernel::class,
             Kernel::class

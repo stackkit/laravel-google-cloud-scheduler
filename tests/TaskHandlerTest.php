@@ -3,12 +3,19 @@
 namespace Tests;
 
 use Firebase\JWT\JWT;
+use Firebase\JWT\SignatureInvalidException;
+use GuzzleHttp\Client;
+use Illuminate\Cache\Events\CacheHit;
+use Illuminate\Cache\Events\KeyWritten;
 use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Mockery;
+use phpseclib\Crypt\RSA;
 use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
 use Stackkit\LaravelGoogleCloudScheduler\Command;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
@@ -22,15 +29,31 @@ class TaskHandlerTest extends TestCase
     private $fakeCommand;
     private $openId;
     private $request;
+    private $jwt;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        $this->fakeCommand = \Mockery::mock(Command::class)->makePartial();
+        $this->fakeCommand = Mockery::mock(Command::class)->makePartial();
+
+        config()->set('laravel-google-cloud-scheduler.app_url', 'my-application.com');
+
+        // We don't have a valid token to test with, so for now act as if its always valid
+        $this->app->instance(JWT::class, ($this->jwt = Mockery::mock(new JWT())->byDefault()->makePartial()));
+        $this->jwt->shouldReceive('decode')->andReturn((object) [
+            'iss' => 'accounts.google.com',
+            'aud' => 'my-application.com',
+            'exp' => time() + 10
+        ])->byDefault();
 
         // ensure we don't call Google services to validate the token
-        $this->openId = \Mockery::mock(app(OpenIdVerificator::class))->makePartial();
+        $this->openId = Mockery::mock(new OpenIdVerificator(
+            new Client(),
+            new RSA(),
+            $this->jwt
+        ))->makePartial();
+
 
         $this->request = new Request();
         $this->request->headers->add(['Authorization' => 'test']);
@@ -49,8 +72,9 @@ class TaskHandlerTest extends TestCase
     public function it_executes_the_incoming_command()
     {
         $this->fakeCommand->shouldReceive('capture')->andReturn('env');
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
         $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
-        $this->openId->shouldReceive('decodeToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturnNull();
 
         $output = $this->taskHandler->handle();
 
@@ -61,6 +85,7 @@ class TaskHandlerTest extends TestCase
     public function it_requires_a_jwt()
     {
         $this->fakeCommand->shouldReceive('capture')->andReturn('env');
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
         $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
 
         $this->request->headers->remove('Authorization');
@@ -73,14 +98,17 @@ class TaskHandlerTest extends TestCase
     /** @test */
     public function it_requires_a_jwt_signed_by_google()
     {
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
         $this->fakeCommand->shouldReceive('capture')->andReturn('env');
 
-        $dummyJwt = JWT::encode('test', 'test');
-
-        $this->request->headers->add(['Authorization' => 'Bearer ' . $dummyJwt]);
+        $this->jwt->shouldReceive('decode')->andReturn((object) [
+            'iss' => 'accounts.dfdfdf.com',
+            'aud' => 'my-application.com',
+            'exp' => time() + 10
+        ]);
 
         $this->expectException(CloudSchedulerException::class);
-        $this->expectExceptionMessage('Could not decode token');
+        $this->expectExceptionMessage('The given OpenID token is not valid');
 
         $this->taskHandler->handle();
     }
@@ -90,7 +118,8 @@ class TaskHandlerTest extends TestCase
     {
         $this->expectExceptionMessage('The given OpenID token is not valid');
 
-        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturn((object) [
             'iss' => 'accounts.not-google.com',
         ]);
 
@@ -102,7 +131,8 @@ class TaskHandlerTest extends TestCase
     {
         $this->expectExceptionMessage('The given OpenID token has expired');
 
-        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturn((object) [
             'iss' => 'accounts.google.com',
             'exp' => time() - 10,
         ]);
@@ -115,7 +145,8 @@ class TaskHandlerTest extends TestCase
     {
         config()->set('laravel-google-cloud-scheduler.app_url', 'my-application.com');
         $this->fakeCommand->shouldReceive('capture')->andReturn('env');
-        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturn((object) [
             'iss' => 'accounts.google.com',
             'exp' => time() + 10,
             'aud' => 'my-application.com',
@@ -127,7 +158,7 @@ class TaskHandlerTest extends TestCase
             $this->fail('The command should not have thrown an exception');
         }
 
-        $this->openId->shouldReceive('decodeToken')->andReturn((object) [
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturn((object) [
             'iss' => 'accounts.google.com',
             'exp' => time() + 10,
             'aud' => 'my-other-application.com',
@@ -144,7 +175,8 @@ class TaskHandlerTest extends TestCase
     {
         $this->fakeCommand->shouldReceive('capture')->andReturn('test:command');
         $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
-        $this->openId->shouldReceive('decodeToken')->andReturnNull();
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturnNull();
 
         cache()->clear();
 
@@ -170,7 +202,8 @@ class TaskHandlerTest extends TestCase
     {
         $this->fakeCommand->shouldReceive('capture')->andReturn('test:command2');
         $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
-        $this->openId->shouldReceive('decodeToken')->andReturnNull();
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturnNull();
 
         Log::swap(new LogFake());
 
@@ -179,5 +212,21 @@ class TaskHandlerTest extends TestCase
         Log::assertLoggedMessage('info', 'log after');
         Log::assertLoggedMessage('warning', 'log before');
         Log::assertLoggedMessage('debug', 'did something testy');
+    }
+
+    /** @test */
+    public function in_case_of_signature_verification_failure_it_will_retry()
+    {
+        Event::fake();
+
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
+        $this->jwt->shouldReceive('decode')->andThrow(SignatureInvalidException::class);
+
+        $this->expectException(SignatureInvalidException::class);
+
+        $this->taskHandler->handle();
+
+        Event::assertDispatched(CacheHit::class);
+        Event::assertDispatched(KeyWritten::class);
     }
 }

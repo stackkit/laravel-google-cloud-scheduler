@@ -58,7 +58,9 @@ class TaskHandler
 
         $openIdToken = $this->request->bearerToken();
 
-        $decodedToken = $this->openId->decodeToken($openIdToken);
+        $kid = $this->openId->getKidFromOpenIdToken($openIdToken);
+
+        $decodedToken = $this->openId->decodeOpenIdToken($openIdToken, $kid);
 
         $this->openId->guardAgainstInvalidOpenIdToken($decodedToken);
     }
