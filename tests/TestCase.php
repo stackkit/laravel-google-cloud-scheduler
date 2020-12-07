@@ -37,8 +37,6 @@ class TestCase extends \Orchestra\Testbench\TestCase
             unlink($file);
         }
 
-        $app['config']->set('cache.default', 'file');
-
         $app->singleton(
             \Illuminate\Contracts\Console\Kernel::class,
             Kernel::class
