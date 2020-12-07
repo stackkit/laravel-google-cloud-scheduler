@@ -18,7 +18,7 @@
         <env name="APP_DEBUG" value="1"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_KEY" value="AckfSECXIvnK5r28GVIWUAxmbBSjTsmF"/>
-        <env name="CACHE_DRIVER" value="array"/>
+        <env name="CACHE_DRIVER" value="file"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="MAIL_DRIVER" value="log"/>
     </php>

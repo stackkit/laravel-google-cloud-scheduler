@@ -11,8 +11,7 @@
         "ext-json": "*",
         "google/cloud-scheduler": "^1.4",
         "firebase/php-jwt": "^5.2",
-        "phpseclib/phpseclib": "~2.0",
-        "laravel/framework": "8.*"
+        "phpseclib/phpseclib": "~2.0"
     },
     "require-dev": {
         "mockery/mockery": "^1.2",
