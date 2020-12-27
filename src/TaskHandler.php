@@ -96,6 +96,10 @@ class TaskHandler
         $events = $this->schedule->events();
 
         foreach ($events as $event) {
+            if (!is_string($event->command)) {
+                continue;
+            }
+
             $eventCommand = $this->commandWithoutArtisan($event->command);
 
             if ($command === $eventCommand) {
