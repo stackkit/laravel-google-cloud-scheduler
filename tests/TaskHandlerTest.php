@@ -229,4 +229,24 @@ class TaskHandlerTest extends TestCase
         Event::assertDispatched(CacheHit::class);
         Event::assertDispatched(KeyWritten::class);
     }
+
+    /** @test */
+    public function it_can_run_the_schedule_run_command()
+    {
+        $this->fakeCommand->shouldReceive('capture')->andReturn('schedule:run');
+        $this->openId->shouldReceive('guardAgainstInvalidOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
+        $this->openId->shouldReceive('decodeOpenIdToken')->andReturnNull();
+
+        Log::swap(new LogFake());
+
+        $this->taskHandler->handle();
+
+        Log::assertLoggedMessage('info', 'log after');
+        Log::assertLoggedMessage('warning', 'log before');
+        Log::assertLoggedMessage('info', 'log call');
+
+        // @todo - can't test commands run from schedule:run because testbench has no artisan binary.
+        // Log::assertLoggedMessage('debug', 'did something testy');
+    }
 }

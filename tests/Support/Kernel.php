@@ -21,5 +21,8 @@ class Kernel extends ConsoleKernel
         })->after(function () {
             Log::warning('log before');
         });
+        $schedule->call(function () {
+            Log::info('log call');
+        });
     }
 }

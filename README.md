@@ -52,11 +52,11 @@ STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
 
 # Cloud Scheduler Example
 
-Here is an example job that will run `php artisan inspire` every minute.
+Here is an example job that will run `php artisan schedule:run` every minute.
 
 These are the most important settings:
 - Target must be `HTTP`
-- URL must be `https://yourdomainname.com/cloud-scheduler-job`
+- URL and AUD (audience) must be `https://yourdomainname.com/cloud-scheduler-job`
 - Auth header must be OIDC token!
 
 <img src="/example.png">
