@@ -50,6 +50,31 @@ composer require stackkit/laravel-google-cloud-scheduler
 STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
 ```
 
+(3) Optional: whitelist route for maintenance mode
+
+This step is optional, but highly recommended. To allow jobs to keep running if the application is down (`php artisan down`) you must modify the `PreventRequestsDuringMaintenance` middleware:
+
+```diff
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance as Middleware;
+
+class PreventRequestsDuringMaintenance extends Middleware
+{
+    /**
+     * The URIs that should be reachable while maintenance mode is enabled.
+     *
+     * @var array
+     */
+    protected $except = [
++        '/cloud-scheduler-job',
+    ];
+}
+
+```
+
 # Cloud Scheduler Example
 
 Here is an example job that will run `php artisan schedule:run` every minute.
