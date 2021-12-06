@@ -1,7 +1,7 @@
 name: Run tests
 
 on:
-  push:
+  pull_request:
   schedule:
     - cron: '0 0 * * *'
 
@@ -57,6 +57,6 @@ jobs:
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
-          composer update --prefer-stable --prefer-dist --no-interaction --no-suggest --ignore-platform-reqs
+          composer update --prefer-stable --prefer-dist --no-interaction --ignore-platform-reqs
       - name: Execute tests
         run: vendor/bin/phpunit
