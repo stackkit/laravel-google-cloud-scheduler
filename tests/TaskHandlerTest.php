@@ -12,8 +12,8 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\Request;
+use Illuminate\Log\LogManager;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
 use Mockery;
 use phpseclib\Crypt\RSA;
 use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
@@ -21,7 +21,6 @@ use Stackkit\LaravelGoogleCloudScheduler\Command;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 use Stackkit\LaravelGoogleCloudScheduler\TaskHandler;
 use Throwable;
-use TiMacDonald\Log\LogFake;
 
 class TaskHandlerTest extends TestCase
 {
@@ -30,6 +29,16 @@ class TaskHandlerTest extends TestCase
     private $openId;
     private $request;
     private $jwt;
+
+    /**
+     * @var LogManager
+     */
+    private $laravelLogger = null;
+
+    /**
+     * @var Mockery\Mock
+     */
+    private $log;
 
     public function setUp(): void
     {
@@ -66,6 +75,26 @@ class TaskHandlerTest extends TestCase
             app(Schedule::class),
             Container::getInstance()
         );
+
+        $this->registerLogFake();
+    }
+
+    /**
+     * Mock the Laravel logger so we can assert the commands are or aren't called.
+     *
+     * @return void
+     */
+    private function registerLogFake()
+    {
+        if (is_null($this->laravelLogger)) {
+            $this->laravelLogger = app('log');
+        }
+
+        $this->log = Mockery::mock($this->laravelLogger);
+
+        $this->app->singleton('log', function () {
+            return $this->log;
+        });
     }
 
     /** @test */
@@ -180,21 +209,28 @@ class TaskHandlerTest extends TestCase
 
         cache()->clear();
 
-        Log::shouldReceive('debug')->twice();
-
         $this->taskHandler->handle();
+
+        $this->log->shouldHaveReceived('debug')->once();
 
         $expression = '* * * * *';
         $command = ConsoleApplication::formatCommandString('test:command');
         $mutex = 'framework'.DIRECTORY_SEPARATOR.'schedule-'.sha1($expression.$command);
 
         cache()->add($mutex, true, 60);
+        $this->registerLogFake();
 
         $this->taskHandler->handle();
+
+        $this->log->shouldNotHaveReceived('debug');
 
         cache()->delete($mutex);
 
+        $this->registerLogFake();
+
         $this->taskHandler->handle();
+
+        $this->log->shouldNotHaveReceived('debug');
     }
 
     /** @test */
@@ -205,13 +241,11 @@ class TaskHandlerTest extends TestCase
         $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
         $this->openId->shouldReceive('decodeOpenIdToken')->andReturnNull();
 
-        Log::swap(new LogFake());
-
         $this->taskHandler->handle();
 
-        Log::assertLoggedMessage('info', 'log after');
-        Log::assertLoggedMessage('warning', 'log before');
-        Log::assertLoggedMessage('debug', 'did something testy');
+        $this->log->shouldHaveReceived()->info('log after')->once();
+        $this->log->shouldHaveReceived()->warning('log before')->once();
+        $this->log->shouldHaveReceived()->debug('did something testy')->once();
     }
 
     /** @test */
@@ -238,13 +272,11 @@ class TaskHandlerTest extends TestCase
         $this->openId->shouldReceive('getKidFromOpenIdToken')->andReturnNull();
         $this->openId->shouldReceive('decodeOpenIdToken')->andReturnNull();
 
-        Log::swap(new LogFake());
-
         $this->taskHandler->handle();
 
-        Log::assertLoggedMessage('info', 'log after');
-        Log::assertLoggedMessage('warning', 'log before');
-        Log::assertLoggedMessage('info', 'log call');
+        $this->log->shouldHaveReceived()->info('log after')->once();
+        $this->log->shouldHaveReceived()->warning('log before')->once();
+        $this->log->shouldHaveReceived()->info('log call')->once();
 
         // @todo - can't test commands run from schedule:run because testbench has no artisan binary.
         // Log::assertLoggedMessage('debug', 'did something testy');
