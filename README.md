@@ -75,6 +75,101 @@ class PreventRequestsDuringMaintenance extends Middleware
 
 ```
 
+(4) Optional: set application `RUNNING_IN_CONSOLE` (highly recommended)
+
+Some Laravel service providers only register their commands if the application is being accessed through the command line (Artisan). Because we are calling Laravel scheduler from a HTTP call, that means some commands may never register, such as the Laravel Scout command:
+
+```php
+/**
+ * Bootstrap any application services.
+ *
+ * @return void
+ */
+public function boot()
+{
+    if ($this->app->runningInConsole()) {
+        $this->commands([
+            FlushCommand::class,
+            ImportCommand::class,
+            IndexCommand::class,
+            DeleteIndexCommand::class,
+        ]);
+
+        $this->publishes([
+            __DIR__.'/../config/scout.php' => $this->app['path.config'].DIRECTORY_SEPARATOR.'scout.php',
+        ]);
+    }
+}
+```
+
+To circumvent this, please add the following to `public/index.php`
+
+```diff
+/*
+|--------------------------------------------------------------------------
+| Check If Application Is Under Maintenance
+|--------------------------------------------------------------------------
+|
+| If the application is maintenance / demo mode via the "down" command we
+| will require this file so that any prerendered template can be shown
+| instead of starting the framework, which could cause an exception.
+|
+*/
+
+if (file_exists(__DIR__.'/../storage/framework/maintenance.php')) {
+    require __DIR__.'/../storage/framework/maintenance.php';
+}
++ 
++ /*
++ |--------------------------------------------------------------------------
++ | Manually Set Running In Console for Google Cloud Scheduler
++ |--------------------------------------------------------------------------
++ |
++ | Some service providers only register their commands if the application
++ | is running from the console. Since we are calling Cloud Scheduler
++ | from the browser we must manually trick the application into
++ | thinking that it is being run from the command line.
++ |
++ */
++ 
++ if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
++     $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
++ }
++ 
+/*
+|--------------------------------------------------------------------------
+| Register The Auto Loader
+|--------------------------------------------------------------------------
+|
+| Composer provides a convenient, automatically generated class loader for
+| this application. We just need to utilize it! We'll simply require it
+| into the script here so we don't need to manually load our classes.
+|
+*/
+
+require __DIR__.'/../vendor/autoload.php';
+```
+
+Copy the code here:
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Manually Set Running In Console for Google Cloud Scheduler
+|--------------------------------------------------------------------------
+|
+| Some service providers only register their commands if the application
+| is running from the console. Since we are calling Cloud Scheduler
+| from the browser we must manually trick the application into
+| thinking that it is being run from the command line.
+|
+*/
+
+if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
+    $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
+}
+```
+
 # Cloud Scheduler Example
 
 Here is an example job that will run `php artisan schedule:run` every minute.
