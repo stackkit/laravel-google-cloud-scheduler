@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Firebase\JWT\JWT;
 use Firebase\JWT\SignatureInvalidException;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ServerException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use phpseclib\Crypt\RSA;
@@ -105,7 +106,23 @@ class OpenIdVerificator
 
     private function callApiAndReturnValue($url, $value)
     {
-        $response = $this->guzzle->get($url);
+        $attempts = 0;
+
+        while (true) {
+            try {
+                $response = $this->guzzle->get($url);
+
+                break;
+            } catch (ServerException $e) {
+                $attempts++;
+
+                if ($attempts >= 3) {
+                    throw $e;
+                }
+
+                sleep(1);
+            }
+        }
 
         $data = json_decode($response->getBody(), true);
 
