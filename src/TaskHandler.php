@@ -4,31 +4,20 @@ namespace Stackkit\LaravelGoogleCloudScheduler;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Container\Container;
-use Illuminate\Contracts\Console\Kernel;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
 class TaskHandler
 {
     private $command;
-    private $request;
-    private $openId;
-    private $kernel;
     private $schedule;
     private $container;
 
     public function __construct(
         Command $command,
-        Request $request,
-        OpenIdVerificator $openId,
-        Kernel $kernel,
         Schedule $schedule,
         Container $container
     ) {
         $this->command = $command;
-        $this->request = $request;
-        $this->openId = $openId;
-        $this->kernel = $kernel;
         $this->schedule = $schedule;
         $this->container = $container;
     }
@@ -38,31 +27,13 @@ class TaskHandler
      */
     public function handle()
     {
-        $this->authorizeRequest();
+        OpenIdVerificator::verify(request()->bearerToken(), []);
 
         set_time_limit(0);
 
         $output = $this->runCommand($this->command->captureWithoutArtisan());
 
         return $this->cleanOutput($output);
-    }
-
-    /**
-     * @throws CloudSchedulerException
-     */
-    private function authorizeRequest()
-    {
-        if (!$this->request->hasHeader('Authorization')) {
-            throw new CloudSchedulerException('Unauthorized');
-        }
-
-        $openIdToken = $this->request->bearerToken();
-
-        $kid = $this->openId->getKidFromOpenIdToken($openIdToken);
-
-        $decodedToken = $this->openId->decodeOpenIdToken($openIdToken, $kid);
-
-        $this->openId->guardAgainstInvalidOpenIdToken($decodedToken);
     }
 
     private function runCommand($command)
