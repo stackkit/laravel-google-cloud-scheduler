@@ -2,9 +2,7 @@
 
 namespace Tests;
 
-use Illuminate\Console\Scheduling\Schedule;
 use Tests\Support\Kernel;
-use Tests\Support\TestCommand;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {

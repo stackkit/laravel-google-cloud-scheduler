@@ -10,6 +10,7 @@ class CloudSchedulerServiceProvider extends LaravelServiceProvider
     public function boot(Router $router)
     {
         $this->registerRoutes($router);
+        $this->registerClient();
     }
 
     public function register()
@@ -20,5 +21,10 @@ class CloudSchedulerServiceProvider extends LaravelServiceProvider
     private function registerRoutes(Router $router)
     {
         $router->post('cloud-scheduler-job', [TaskHandler::class, 'handle']);
+    }
+
+    private function registerClient()
+    {
+        $this->app->bind('open-id-verificator', OpenIdVerificatorConcrete::class);
     }
 }
