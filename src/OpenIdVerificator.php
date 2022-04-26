@@ -8,7 +8,7 @@ class OpenIdVerificator extends Facade
 {
     protected static function getFacadeAccessor()
     {
-        return 'open-id-verificator';
+        return 'open-id-verificator-gcs';
     }
 
     public static function fake(): void
