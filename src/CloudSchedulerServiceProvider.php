@@ -25,6 +25,6 @@ class CloudSchedulerServiceProvider extends LaravelServiceProvider
 
     private function registerClient()
     {
-        $this->app->bind('open-id-verificator', OpenIdVerificatorConcrete::class);
+        $this->app->bind('open-id-verificator-gcs', OpenIdVerificatorConcrete::class);
     }
 }
