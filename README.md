@@ -15,7 +15,7 @@ It only supports Artisan commands at this time due to security concerns.
 
 # How it works
 
-Cloud Tasks will make a HTTP call to your application. This package adds an endpoint to your application that accepts the HTTP call and its payload (an Artisan command) and executes the command.
+Cloud Scheduler will make HTTP calls to your application. This package adds an endpoint to your application that accepts these HTTP calls with their payload (an Artisan command) and execute them.
 
 #### withoutOverlapping, before, after, onSuccess, thenPing, etc
 
