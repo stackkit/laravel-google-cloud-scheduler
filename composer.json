@@ -10,7 +10,7 @@
     "require": {
         "ext-json": "*",
         "google/cloud-scheduler": "^1.6",
-        "phpseclib/phpseclib": "~2.0"
+        "phpseclib/phpseclib": "~3.0"
     },
     "require-dev": {
         "mockery/mockery": "^1.5",
