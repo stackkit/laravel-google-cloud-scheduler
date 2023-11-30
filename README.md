@@ -37,19 +37,19 @@ Please check the table below for supported Laravel and PHP versions:
 
 # Installation
 
-(1) Require the package using Composer
+1) Require the package using Composer
 
 ```bash
 composer require stackkit/laravel-google-cloud-scheduler
 ```
 
-(2) Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
+2) Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
 
 ```
 STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
 ```
 
-(3) Optional: whitelist route for maintenance mode
+3) Optional: whitelist route for maintenance mode
 
 This step is optional, but highly recommended. To allow jobs to keep running if the application is down (`php artisan down`) you must modify the `PreventRequestsDuringMaintenance` middleware:
 
@@ -74,7 +74,7 @@ class PreventRequestsDuringMaintenance extends Middleware
 
 ```
 
-(4) Optional: set application `RUNNING_IN_CONSOLE` (highly recommended)
+4) Optional: set application `RUNNING_IN_CONSOLE` (highly recommended)
 
 Some Laravel service providers only register their commands if the application is being accessed through the command line (Artisan). Because we are calling Laravel scheduler from a HTTP call, that means some commands may never register, such as the Laravel Scout command:
 
@@ -101,8 +101,10 @@ public function boot()
 }
 ```
 
-To circumvent this, please add the following to `public/index.php`
+To circumvent this, please add do the following:
 
+> For projects _**NOT**_ using Laravel Octane:
+    Change `public/index.php`
 ```diff
 /*
 |--------------------------------------------------------------------------
@@ -165,6 +167,74 @@ Copy the code here:
 */
 
 if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
+    $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
+}
+```
+
+> For projects _**that are**_ using Laravel Octane:
+    Change `public/index.php`
+```diff
+/*
+|--------------------------------------------------------------------------
+| Check If Application Is Under Maintenance
+|--------------------------------------------------------------------------
+|
+| If the application is maintenance / demo mode via the "down" command we
+| will require this file so that any prerendered template can be shown
+| instead of starting the framework, which could cause an exception.
+|
+*/
+
+if (file_exists(__DIR__.'/../storage/framework/maintenance.php')) {
+    require __DIR__.'/../storage/framework/maintenance.php';
+}
++ 
++ /*
++ |--------------------------------------------------------------------------
++ | Manually Set Running In Console for Google Cloud Scheduler
++ |--------------------------------------------------------------------------
++ |
++ | Some service providers only register their commands if the application
++ | is running from the console. Since we are calling Cloud Scheduler
++ | from the browser we must manually trick the application into
++ | thinking that it is being run from the command line.
++ |
++ */
++ 
++ if ($_ENV['LARAVEL_OCTANE']) {
++     $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
++ }
++ 
+/*
+|--------------------------------------------------------------------------
+| Register The Auto Loader
+|--------------------------------------------------------------------------
+|
+| Composer provides a convenient, automatically generated class loader for
+| this application. We just need to utilize it! We'll simply require it
+| into the script here so we don't need to manually load our classes.
+|
+*/
+
+require __DIR__.'/../vendor/autoload.php';
+```
+
+Copy the code here:
+
+```php
+/*
+|--------------------------------------------------------------------------
+| Manually Set Running In Console for Google Cloud Scheduler
+|--------------------------------------------------------------------------
+|
+| Some service providers only register their commands if the application
+| is running from the console. Since we are calling Cloud Scheduler
+| from the browser we must manually trick the application into
+| thinking that it is being run from the command line.
+|
+*/
+
+if ($_ENV['LARAVEL_OCTANE']) {
     $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
 }
 ```
