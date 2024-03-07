@@ -32,8 +32,8 @@ Please check the table below for supported Laravel and PHP versions:
 | 6.x | 7.4 or 8.0
 | 7.x | 7.4 or 8.0
 | 8.x | 7.4 or 8.0
-| 9.x | 8.0 or 8.1 or 8.2
-| 10.x | 8.1 or 8.2
+| 9.x | 8.0 or 8.1 or 8.2 or 8.3
+| 10.x | 8.1 or 8.2 or 8.3
 
 # Installation
 
