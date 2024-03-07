@@ -1,9 +1,6 @@
 name: Run tests
 
 on:
-  push:
-    branches:
-      - master
   pull_request_target:
     types: [opened, synchronize, labeled]
   schedule:
@@ -20,6 +17,17 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             if (context.eventName === 'schedule') {
+              return
+            }
+            
+            // If the user that pushed the commit is a maintainer, skip the check
+            const collaborators = await github.rest.repos.listCollaborators({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            
+            if (collaborators.data.some(c => c.login === context.actor)) {
+              console.log(`User ${context.actor} is allowed to run tests because they are a collaborator.`);
               return
             }
             
