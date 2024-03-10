@@ -15,7 +15,8 @@
     },
     "require-dev": {
         "mockery/mockery": "^1.5",
-        "orchestra/testbench": "^8.0"
+        "orchestra/testbench": "^8.0",
+        "nunomaduro/collision": "^7.0",
     },
     "autoload": {
         "psr-4": {
