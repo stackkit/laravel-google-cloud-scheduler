@@ -48,11 +48,7 @@ class TaskHandlerTest extends TestCase
 
         $output = $this->taskHandler->handle();
 
-        if (version_compare(app()->version(), '9.0.0', '>=')) {
-            $this->assertStringContainsString('The application environment is [testing]', $output);
-        } else {
-            $this->assertEquals('Current application environment: testing', $output);
-        }
+        $this->assertStringContainsString('The application environment is [testing]', $output);
     }
 
     /** @test */
