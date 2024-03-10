@@ -11,29 +11,47 @@
 
 This package allows you to use Google Cloud Scheduler to schedule Laravel commands.
 
-It only supports Artisan commands at this time due to security concerns.
-
 # How it works
 
 Cloud Scheduler will make HTTP calls to your application. This package adds an endpoint to your application that accepts these HTTP calls with their payload (an Artisan command) and execute them.
 
-#### withoutOverlapping, before, after, onSuccess, thenPing, etc
+There are two ways to use this package:
 
-All these features are supported. This package scans your console kernel (`app/Console/Kernel.php`) to see if the scheduled command in Cloud Scheduler is also scheduled in the console kernel, If it is, it will respect all configured events/hooks associated with the command. (such as withoutOverlapping) 
+<details>
+<summary>1. Schedule the `schedule:run` command</summary>
+
+This is the easiest way to use this package. You can schedule the `schedule:run` command to run every minute.
+</details>
+
+<details>
+<summary>2. Schedule commands separately</summary>
+
+If your application does not have commands that should run every minute, you may choose to schedule them individually.
+
+If the command uses `withoutOverlapping`, `before`, `after`, `onSuccess`, `thenPing`, etc, this package will respect those settings, as long as the command is also scheduled in the console kernel.
+
+For example, let's say we have to generate a report every day at 3:00 AM. We can schedule the `reports:generate` command to run at 3:00 AM using Cloud Scheduler. After the report is generated, OhDear should be pinged.
+
+Firstly, schedule the command in Cloud Tasks:
+
+<img src="/schedule-command-example.png">
+
+Then, schedule the command in the console kernel:
+
+```php
+public function schedule(Schedule $schedule)
+{
+    $schedule->command('report:generate')
+        ->thenPing('https://ohdear.app/ping');
+}
+```
+
+The package will pick up on the scheduled settings and ping OhDear after the command has run.
+</details>
 
 # Requirements
 
-This package requires Laravel 6 or higher.
-
-Please check the table below for supported Laravel and PHP versions:
-
-|Laravel Version| PHP Version |
-|---|---|
-| 6.x | 7.4 or 8.0
-| 7.x | 7.4 or 8.0
-| 8.x | 7.4 or 8.0
-| 9.x | 8.0 or 8.1 or 8.2 or 8.3
-| 10.x | 8.1 or 8.2 or 8.3
+This package requires Laravel 10 or 11.
 
 # Installation
 
