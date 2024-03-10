@@ -83,7 +83,7 @@ class TaskHandler
 
     private function commandWithoutArtisan($command)
     {
-        $parts = explode('artisan', $command);
+        $parts = explode(ARTISAN_BINARY, $command);
 
         return substr($parts[1], 2, strlen($parts[1]));
     }

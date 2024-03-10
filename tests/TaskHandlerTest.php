@@ -6,27 +6,21 @@ use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Container\Container;
 use Illuminate\Log\LogManager;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
 use Stackkit\LaravelGoogleCloudScheduler\Command;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 use Stackkit\LaravelGoogleCloudScheduler\TaskHandler;
+use Tests\Support\LogOutput;
 use UnexpectedValueException;
+use Workbench\App\Events\TaskOutput;
 
 class TaskHandlerTest extends TestCase
 {
     private $taskHandler;
     private $fakeCommand;
-
-    /**
-     * @var LogManager
-     */
-    private $laravelLogger = null;
-
-    /**
-     * @var Mockery\Mock
-     */
-    private $log;
 
     public function setUp(): void
     {
@@ -43,26 +37,6 @@ class TaskHandlerTest extends TestCase
             app(Schedule::class),
             Container::getInstance()
         );
-
-        $this->registerLogFake();
-    }
-
-    /**
-     * Mock the Laravel logger so we can assert the commands are or aren't called.
-     *
-     * @return void
-     */
-    private function registerLogFake()
-    {
-        if (is_null($this->laravelLogger)) {
-            $this->laravelLogger = app('log');
-        }
-
-        $this->log = Mockery::mock($this->laravelLogger);
-
-        $this->app->singleton('log', function () {
-            return $this->log;
-        });
     }
 
     /** @test */
@@ -107,6 +81,7 @@ class TaskHandlerTest extends TestCase
     public function it_prevents_overlapping_if_the_command_is_scheduled_without_overlapping()
     {
         OpenIdVerificator::fake();
+        Event::fake();
 
         $this->fakeCommand->shouldReceive('capture')->andReturn('test:command');
 
@@ -114,56 +89,56 @@ class TaskHandlerTest extends TestCase
 
         $this->taskHandler->handle();
 
-        $this->log->shouldHaveReceived('debug')->once();
+        $this->assertLoggedLines(1);
+        $this->assertLogged('TestCommand');
 
         $expression = '* * * * *';
         $command = ConsoleApplication::formatCommandString('test:command');
         $mutex = 'framework'.DIRECTORY_SEPARATOR.'schedule-'.sha1($expression.$command);
 
         cache()->add($mutex, true, 60);
-        $this->registerLogFake();
 
         $this->taskHandler->handle();
 
-        $this->log->shouldNotHaveReceived('debug');
+        $this->assertLoggedLines(1);
 
         cache()->delete($mutex);
 
-        $this->registerLogFake();
-
         $this->taskHandler->handle();
 
-        $this->log->shouldNotHaveReceived('debug');
+        $this->assertLoggedLines(2);
     }
 
     /** @test */
     public function it_runs_the_before_and_after_callbacks()
     {
         OpenIdVerificator::fake();
+        Event::fake();
 
         $this->fakeCommand->shouldReceive('capture')->andReturn('test:command2');
 
         $this->taskHandler->handle();
 
-        $this->log->shouldHaveReceived()->info('log after')->once();
-        $this->log->shouldHaveReceived()->warning('log before')->once();
-        $this->log->shouldHaveReceived()->debug('did something testy')->once();
+        $this->assertLoggedLines(3);
+        $this->assertLogged('log after');
+        $this->assertLogged('log before');
+        $this->assertLogged('TestCommand2');
     }
 
     /** @test */
     public function it_can_run_the_schedule_run_command()
     {
         OpenIdVerificator::fake();
-
+        Event::fake(TaskOutput::class);
         $this->fakeCommand->shouldReceive('capture')->andReturn('schedule:run');
 
         $this->taskHandler->handle();
 
-        $this->log->shouldHaveReceived()->info('log after')->once();
-        $this->log->shouldHaveReceived()->warning('log before')->once();
-        $this->log->shouldHaveReceived()->info('log call')->once();
-
-        // @todo - can't test commands run from schedule:run because testbench has no artisan binary.
-        // Log::assertLoggedMessage('debug', 'did something testy');
+        $this->assertLoggedLines(5);
+        $this->assertLogged('TestCommand');
+        $this->assertLogged('TestCommand2');
+        $this->assertLogged('log call');
+        $this->assertLogged('log after');
+        $this->assertLogged('log before');
     }
 }
