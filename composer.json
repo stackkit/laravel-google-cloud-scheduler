@@ -33,5 +33,8 @@
                 "Stackkit\\LaravelGoogleCloudScheduler\\CloudSchedulerServiceProvider"
             ]
         }
+    },
+    "scripts": {
+        "test": "phpunit"
     }
 }
