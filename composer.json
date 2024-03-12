@@ -54,6 +54,9 @@
         ],
         "lint": [
             "@php vendor/bin/phpstan analyse"
-        ]
-    }
+        ],
+        "test": "phpunit"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
