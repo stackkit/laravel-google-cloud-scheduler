@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Artisan;
 class TaskHandler
 {
     private $command;
+
     private $schedule;
+
     private $container;
 
     public function __construct(
@@ -59,7 +61,7 @@ class TaskHandler
 
     private function isScheduledCommand($command)
     {
-        return !is_null($this->getScheduledCommand($command));
+        return ! is_null($this->getScheduledCommand($command));
     }
 
     private function getScheduledCommand($command)
@@ -67,7 +69,7 @@ class TaskHandler
         $events = $this->schedule->events();
 
         foreach ($events as $event) {
-            if (!is_string($event->command)) {
+            if (! is_string($event->command)) {
                 continue;
             }
 

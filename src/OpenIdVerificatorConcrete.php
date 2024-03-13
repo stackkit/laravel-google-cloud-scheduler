@@ -9,7 +9,7 @@ class OpenIdVerificatorConcrete extends Facade
 {
     public function verify(?string $token, array $config): void
     {
-        if (!$token) {
+        if (! $token) {
             throw new CloudSchedulerException('Missing [Authorization] header');
         }
 

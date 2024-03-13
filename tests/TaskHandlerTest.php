@@ -5,21 +5,20 @@ namespace Tests;
 use Illuminate\Console\Application as ConsoleApplication;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Container\Container;
-use Illuminate\Log\LogManager;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Storage;
 use Mockery;
+use PHPUnit\Framework\Attributes\Test;
 use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
 use Stackkit\LaravelGoogleCloudScheduler\Command;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 use Stackkit\LaravelGoogleCloudScheduler\TaskHandler;
-use Tests\Support\LogOutput;
 use UnexpectedValueException;
 use Workbench\App\Events\TaskOutput;
 
 class TaskHandlerTest extends TestCase
 {
     private $taskHandler;
+
     private $fakeCommand;
 
     public function setUp(): void
@@ -39,7 +38,7 @@ class TaskHandlerTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_executes_the_incoming_command()
     {
         OpenIdVerificator::fake();
@@ -51,7 +50,7 @@ class TaskHandlerTest extends TestCase
         $this->assertStringContainsString('The application environment is [testing]', $output);
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_a_jwt()
     {
         $this->fakeCommand->shouldReceive('capture')->andReturn('env');
@@ -63,7 +62,7 @@ class TaskHandlerTest extends TestCase
         $this->taskHandler->handle();
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_a_jwt_signed_by_google()
     {
         $this->fakeCommand->shouldReceive('capture')->andReturn('env');
@@ -73,7 +72,7 @@ class TaskHandlerTest extends TestCase
         $this->taskHandler->handle();
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_overlapping_if_the_command_is_scheduled_without_overlapping()
     {
         OpenIdVerificator::fake();
@@ -105,7 +104,7 @@ class TaskHandlerTest extends TestCase
         $this->assertLoggedLines(2);
     }
 
-    /** @test */
+    #[Test]
     public function it_runs_the_before_and_after_callbacks()
     {
         OpenIdVerificator::fake();
@@ -121,7 +120,7 @@ class TaskHandlerTest extends TestCase
         $this->assertLogged('TestCommand2');
     }
 
-    /** @test */
+    #[Test]
     public function it_can_run_the_schedule_run_command()
     {
         OpenIdVerificator::fake();

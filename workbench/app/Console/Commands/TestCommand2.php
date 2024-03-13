@@ -10,6 +10,6 @@ class TestCommand2 extends Command
 
     public function handle()
     {
-        file_put_contents(storage_path('log.txt'), 'TestCommand2' . PHP_EOL, FILE_APPEND);
+        file_put_contents(storage_path('log.txt'), 'TestCommand2'.PHP_EOL, FILE_APPEND);
     }
 }

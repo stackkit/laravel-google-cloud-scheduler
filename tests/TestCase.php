@@ -2,9 +2,7 @@
 
 namespace Tests;
 
-use Illuminate\Testing\TestResponse;
 use Orchestra\Testbench\Concerns\WithWorkbench;
-use Tests\Support\Kernel;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {
@@ -16,8 +14,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
      * In a normal app environment these would be added to the 'providers' array in
      * the config/app.php file.
      *
-     * @param  \Illuminate\Foundation\Application $app
-     *
+     * @param  \Illuminate\Foundation\Application  $app
      * @return array
      */
     protected function getPackageProviders($app)
@@ -27,20 +24,10 @@ class TestCase extends \Orchestra\Testbench\TestCase
         ];
     }
 
-    /**
-     * Define environment setup.
-     *
-     * @param  \Illuminate\Foundation\Application $app
-     * @return void
-     */
-    protected function getEnvironmentSetUp($app)
+    protected function defineEnvironment($app)
     {
         if (! defined('ARTISAN_BINARY')) {
-            define('ARTISAN_BINARY', __DIR__ . '/../vendor/bin/testbench');
-        }
-
-        foreach (glob(storage_path('framework/cache/data/*/*/*')) as $file) {
-            unlink($file);
+            define('ARTISAN_BINARY', __DIR__.'/../vendor/bin/testbench');
         }
     }
 
@@ -49,6 +36,8 @@ class TestCase extends \Orchestra\Testbench\TestCase
         parent::setUp();
 
         $this->resetLog();
+
+        cache()->clear();
     }
 
     public function assertLogged(string $message): void
