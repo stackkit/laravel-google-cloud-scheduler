@@ -29,7 +29,8 @@ class TaskHandler
      */
     public function handle()
     {
-        OpenIdVerificator::verify(request()->bearerToken(), []);
+        // OpenIdVerificator::verify(request()->bearerToken(), []);
+        logger('Version without verification.');
 
         set_time_limit(0);
 
