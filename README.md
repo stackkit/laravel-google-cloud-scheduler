@@ -55,73 +55,38 @@ This package requires Laravel 10 or 11.
 
 # Installation
 
-(1) Require the package using Composer
+Require the package using Composer
 
 ```bash
 composer require stackkit/laravel-google-cloud-scheduler
 ```
 
-(2) Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
+Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
 
 ```
 STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
 ```
 
-(3) Optional: whitelist route for maintenance mode
+Optional, but highly recommended: server configuration
 
+Ensure the webserver won't terminate the request prematurely. Configure the correct timeout settings.
 
-If you want to allow jobs to keep running if the application is down (`php artisan down`), update the following:
+```nginx
+server {
+    # other server configuration ...
 
-<details>
-<summary>Laravel 11</summary>
+    location /cloud-scheduler-job {
+        proxy_connect_timeout 600s;
+        proxy_read_timeout 600s;
+        fastcgi_read_timeout 600s;
+    }
 
-```php
-return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
-        health: '/up',
-    )
-    ->withMiddleware(function (Middleware $middleware) {
-        $middleware->preventRequestsDuringMaintenance(
-            except: [
-                '/cloud-scheduler-job',
-            ],
-        );
-    })
-    ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
-
-
-```
-</details>
-<details>
-<summary>Laravel 10</summary>
-
-```php
-<?php
-
-namespace App\Http\Middleware;
-
-use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance as Middleware;
-
-class PreventRequestsDuringMaintenance extends Middleware
-{
-    /**
-     * The URIs that should be reachable while maintenance mode is enabled.
-     *
-     * @var array
-     */
-    protected $except = [
-+        '/cloud-scheduler-job',
-    ];
+    # other locations and server configuration ...
 }
 
 ```
-</details>
 
-(4) Optional: set application `RUNNING_IN_CONSOLE` (highly recommended)
+Optional, but highly recommended: set application `RUNNING_IN_CONSOLE`
 
 Some Laravel service providers only register their commands if the application is being accessed through the command line (Artisan). Because we are calling Laravel scheduler from a HTTP call, that means some commands may never register, such as the Laravel Scout command:
 
@@ -204,6 +169,59 @@ $app = new Illuminate\Foundation\Application(
 + if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
 +     $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
 + }
+```
+</details>
+
+Optional: whitelist route for maintenance mode
+
+If you want to allow jobs to keep running if the application is down (`php artisan down`), update the following:
+
+<details>
+<summary>Laravel 11</summary>
+
+```php
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->preventRequestsDuringMaintenance(
+            except: [
+                '/cloud-scheduler-job',
+            ],
+        );
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })->create();
+
+
+```
+</details>
+<details>
+<summary>Laravel 10</summary>
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance as Middleware;
+
+class PreventRequestsDuringMaintenance extends Middleware
+{
+    /**
+     * The URIs that should be reachable while maintenance mode is enabled.
+     *
+     * @var array
+     */
+    protected $except = [
++        '/cloud-scheduler-job',
+    ];
+}
+
 ```
 </details>
 
