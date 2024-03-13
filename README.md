@@ -15,7 +15,7 @@ This package allows you to use Google Cloud Scheduler to schedule Laravel comman
 
 Cloud Scheduler will make HTTP calls to your application. This package adds an endpoint to your application that accepts these HTTP calls with their payload (an Artisan command) and execute them.
 
-There are two ways to use this package:
+There are two ways to schedule commands using this package:
 
 <details>
 <summary>1. Schedule the `schedule:run` command</summary>
@@ -69,7 +69,7 @@ STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
 
 Optional, but highly recommended: server configuration
 
-Ensure the webserver won't terminate the request prematurely. Configure the correct timeout settings.
+Since Artisan commands are now invoked via an HTTP request, you might encounter issues with timeouts. Here's how to adjust them:
 
 ```nginx
 server {
