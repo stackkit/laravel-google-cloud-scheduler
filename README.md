@@ -69,9 +69,37 @@ STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
 
 (3) Optional: whitelist route for maintenance mode
 
-This step is optional, but highly recommended. To allow jobs to keep running if the application is down (`php artisan down`) you must modify the `PreventRequestsDuringMaintenance` middleware:
 
-```diff
+If you want to allow jobs to keep running if the application is down (`php artisan down`), update the following:
+
+<details>
+<summary>Laravel 11</summary>
+
+```php
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->preventRequestsDuringMaintenance(
+            except: [
+                '/cloud-scheduler-job',
+            ],
+        );
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })->create();
+
+
+```
+</details>
+<details>
+<summary>Laravel 10</summary>
+
+```php
 <?php
 
 namespace App\Http\Middleware;
@@ -91,6 +119,7 @@ class PreventRequestsDuringMaintenance extends Middleware
 }
 
 ```
+</details>
 
 (4) Optional: set application `RUNNING_IN_CONSOLE` (highly recommended)
 
