@@ -119,73 +119,64 @@ public function boot()
 }
 ```
 
-To circumvent this, please add the following to `public/index.php`
+To circumvent this, please add the following to `bootstrap/app.php`
 
-```diff
-/*
-|--------------------------------------------------------------------------
-| Check If Application Is Under Maintenance
-|--------------------------------------------------------------------------
-|
-| If the application is maintenance / demo mode via the "down" command we
-| will require this file so that any prerendered template can be shown
-| instead of starting the framework, which could cause an exception.
-|
-*/
+<details>
+<summary>Laravel 11</summary>
+    
+```php
+<?php
 
-if (file_exists(__DIR__.'/../storage/framework/maintenance.php')) {
-    require __DIR__.'/../storage/framework/maintenance.php';
-}
-+ 
-+ /*
-+ |--------------------------------------------------------------------------
-+ | Manually Set Running In Console for Google Cloud Scheduler
-+ |--------------------------------------------------------------------------
-+ |
-+ | Some service providers only register their commands if the application
-+ | is running from the console. Since we are calling Cloud Scheduler
-+ | from the browser we must manually trick the application into
-+ | thinking that it is being run from the command line.
-+ |
-+ */
-+ 
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+
 + if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
 +     $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
 + }
-+ 
-/*
-|--------------------------------------------------------------------------
-| Register The Auto Loader
-|--------------------------------------------------------------------------
-|
-| Composer provides a convenient, automatically generated class loader for
-| this application. We just need to utilize it! We'll simply require it
-| into the script here so we don't need to manually load our classes.
-|
-*/
 
-require __DIR__.'/../vendor/autoload.php';
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        //
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })->create();
+
 ```
+</details>
 
-Copy the code here:
+<details>
+<summary>Laravel 10</summary>
 
 ```php
+<?php
+
 /*
 |--------------------------------------------------------------------------
-| Manually Set Running In Console for Google Cloud Scheduler
+| Create The Application
 |--------------------------------------------------------------------------
 |
-| Some service providers only register their commands if the application
-| is running from the console. Since we are calling Cloud Scheduler
-| from the browser we must manually trick the application into
-| thinking that it is being run from the command line.
+| The first thing we will do is create a new Laravel application instance
+| which serves as the "glue" for all the components of Laravel, and is
+| the IoC container for the system binding all of the various parts.
 |
 */
 
-if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
-    $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
-}
+$app = new Illuminate\Foundation\Application(
+    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
+);
+
++ if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
++     $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
++ }
 ```
+</details>
 
 # Cloud Scheduler Example
 
