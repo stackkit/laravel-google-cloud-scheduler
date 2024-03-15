@@ -6,7 +6,7 @@ class Command
 {
     public function capture()
     {
-        return file_get_contents('php://input');
+        return request()->getContent();
     }
 
     public function captureWithoutArtisan()

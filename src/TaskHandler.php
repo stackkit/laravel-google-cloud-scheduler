@@ -8,18 +8,15 @@ use Illuminate\Support\Facades\Artisan;
 
 class TaskHandler
 {
-    private $command;
     private $schedule;
-    private $container;
 
     public function __construct(
-        Command $command,
-        Schedule $schedule,
-        Container $container
+        private Command $command,
+        private Container $container
     ) {
-        $this->command = $command;
-        $this->schedule = $schedule;
-        $this->container = $container;
+        Artisan::bootstrap();
+
+        $this->schedule = $container->make(Schedule::class);
     }
 
     /**
@@ -27,7 +24,13 @@ class TaskHandler
      */
     public function handle()
     {
-        OpenIdVerificator::verify(request()->bearerToken(), []);
+        if (config('cloud-scheduler.disable_task_handler')) {
+            abort(404);
+        }
+
+        if (config('cloud-scheduler.disable_token_verification') !== true) {
+            OpenIdVerificator::verify(request()->bearerToken(), []);
+        }
 
         set_time_limit(0);
 
@@ -59,7 +62,7 @@ class TaskHandler
 
     private function isScheduledCommand($command)
     {
-        return !is_null($this->getScheduledCommand($command));
+        return ! is_null($this->getScheduledCommand($command));
     }
 
     private function getScheduledCommand($command)
@@ -67,7 +70,7 @@ class TaskHandler
         $events = $this->schedule->events();
 
         foreach ($events as $event) {
-            if (!is_string($event->command)) {
+            if (! is_string($event->command)) {
                 continue;
             }
 
@@ -83,7 +86,7 @@ class TaskHandler
 
     private function commandWithoutArtisan($command)
     {
-        $parts = explode('artisan', $command);
+        $parts = explode(ARTISAN_BINARY, $command);
 
         return substr($parts[1], 2, strlen($parts[1]));
     }
