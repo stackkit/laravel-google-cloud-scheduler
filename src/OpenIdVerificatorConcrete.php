@@ -13,12 +13,16 @@ class OpenIdVerificatorConcrete extends Facade
             throw new CloudSchedulerException('Missing [Authorization] header');
         }
 
-        (new AccessToken())->verify(
+        $payload = (new AccessToken())->verify(
             $token,
             [
-                'audience' => config('laravel-google-cloud-scheduler.app_url'),
+                'audience' => config('cloud-scheduler.app_url'),
                 'throwException' => true,
             ]
         );
+
+        if (($payload['email'] ?? '') !== config('cloud-scheduler.service_account')) {
+            throw new CloudSchedulerException('Invalid service account email');
+        }
     }
 }

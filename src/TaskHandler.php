@@ -29,8 +29,13 @@ class TaskHandler
      */
     public function handle()
     {
-        // OpenIdVerificator::verify(request()->bearerToken(), []);
-        logger('Version without verification.');
+        if (config('cloud-scheduler.disable_task_handler')) {
+            abort(404);
+        }
+
+        if (config('cloud-scheduler.disable_token_verification') !== true) {
+            OpenIdVerificator::verify(request()->bearerToken(), []);
+        }
 
         set_time_limit(0);
 
@@ -41,6 +46,8 @@ class TaskHandler
 
     private function runCommand($command)
     {
+        Artisan::bootstrap();
+
         if ($this->isScheduledCommand($command)) {
             $scheduledCommand = $this->getScheduledCommand($command);
 
