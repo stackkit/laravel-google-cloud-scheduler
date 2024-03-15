@@ -61,10 +61,16 @@ This package requires Laravel 10 or 11.
 composer require stackkit/laravel-google-cloud-scheduler
 ```
 
-2 - Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
+2 - Define environment variables
 
-```
-STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
+`CLOUD_SCHEDULER_APP_URL` - This should be the URL defined in the `URL` field of your Cloud Scheduler job.
+
+`CLOUD_SCHEDULER_SERVICE_ACCOUNT` - The e-mail address of the service account invocating the task.
+
+Optionally, you may publish the configuration file:
+
+```bash
+php artisan vendor:publish --tag-cloud-scheduler-config
 ```
 
 3 - Ensure PHP executable is in open_basedir. This is required for the package to run Artisan commands.
