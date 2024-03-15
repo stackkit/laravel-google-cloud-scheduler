@@ -8,13 +8,6 @@ class TestCase extends \Orchestra\Testbench\TestCase
 {
     use WithWorkbench;
 
-    protected function getPackageProviders($app)
-    {
-        return [
-            \Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerServiceProvider::class,
-        ];
-    }
-
     protected function defineEnvironment($app)
     {
         if (! defined('ARTISAN_BINARY')) {
