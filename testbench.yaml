@@ -1,4 +1,5 @@
 providers:
+   - Workbench\App\Providers\WorkbenchServiceProvider
    - Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerServiceProvider
 
 migrations:
