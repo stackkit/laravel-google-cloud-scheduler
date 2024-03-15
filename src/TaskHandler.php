@@ -8,20 +8,15 @@ use Illuminate\Support\Facades\Artisan;
 
 class TaskHandler
 {
-    private $command;
-
     private $schedule;
 
-    private $container;
-
     public function __construct(
-        Command $command,
-        Schedule $schedule,
-        Container $container
+        private Command $command,
+        private Container $container
     ) {
-        $this->command = $command;
-        $this->schedule = $schedule;
-        $this->container = $container;
+        Artisan::bootstrap();
+
+        $this->schedule = $container->make(Schedule::class);
     }
 
     /**
@@ -46,8 +41,6 @@ class TaskHandler
 
     private function runCommand($command)
     {
-        Artisan::bootstrap();
-
         if ($this->isScheduledCommand($command)) {
             $scheduledCommand = $this->getScheduledCommand($command);
 

@@ -55,19 +55,27 @@ This package requires Laravel 10 or 11.
 
 # Installation
 
-Require the package using Composer
+1 - Require the package using Composer
 
 ```bash
 composer require stackkit/laravel-google-cloud-scheduler
 ```
 
-Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
+2 - Define the `STACKKIT_CLOUD_SCHEDULER_APP_URL` environment variable. This should be the URL defined in the `URL` field of your Cloud Scheduler job.
 
 ```
 STACKKIT_CLOUD_SCHEDULER_APP_URL=https://yourdomainname.com/cloud-scheduler-job
 ```
 
-Optional, but highly recommended: server configuration
+3 - Ensure PHP executable is in open_basedir. This is required for the package to run Artisan commands.
+
+How to find the executable:
+
+```php
+php artisan tinker --execute="(new Symfony\\Component\\Process\\PhpExecutableFinder())->find()"
+```
+
+4 - Optional, but highly recommended: server configuration
 
 Since Artisan commands are now invoked via an HTTP request, you might encounter issues with timeouts. Here's how to adjust them:
 
@@ -86,7 +94,7 @@ server {
 
 ```
 
-Optional, but highly recommended: set application `RUNNING_IN_CONSOLE`
+5 - Optional, but highly recommended: set application `RUNNING_IN_CONSOLE`
 
 Some Laravel service providers only register their commands if the application is being accessed through the command line (Artisan). Because we are calling Laravel scheduler from a HTTP call, that means some commands may never register, such as the Laravel Scout command:
 
@@ -172,7 +180,7 @@ $app = new Illuminate\Foundation\Application(
 ```
 </details>
 
-Optional: whitelist route for maintenance mode
+6 - Optional: whitelist route for maintenance mode
 
 If you want to allow jobs to keep running if the application is down (`php artisan down`), update the following:
 

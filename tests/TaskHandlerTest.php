@@ -3,17 +3,9 @@
 namespace Tests;
 
 use Illuminate\Console\Application as ConsoleApplication;
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Event;
-use Mockery;
 use PHPUnit\Framework\Attributes\Test;
-use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
-use Stackkit\LaravelGoogleCloudScheduler\Command;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
-use Stackkit\LaravelGoogleCloudScheduler\TaskHandler;
-use UnexpectedValueException;
-use Workbench\App\Events\TaskOutput;
 
 class TaskHandlerTest extends TestCase
 {
