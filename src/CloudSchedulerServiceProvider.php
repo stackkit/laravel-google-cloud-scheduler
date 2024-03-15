@@ -2,8 +2,8 @@
 
 namespace Stackkit\LaravelGoogleCloudScheduler;
 
-use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 use Illuminate\Routing\Router;
+use Illuminate\Support\ServiceProvider as LaravelServiceProvider;
 
 class CloudSchedulerServiceProvider extends LaravelServiceProvider
 {
@@ -15,7 +15,11 @@ class CloudSchedulerServiceProvider extends LaravelServiceProvider
 
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/laravel-google-cloud-scheduler.php', 'laravel-google-cloud-scheduler');
+        $this->mergeConfigFrom(__DIR__.'/../config/cloud-scheduler.php', 'cloud-scheduler-config');
+
+        $this->publishes([
+            __DIR__.'/../config/cloud-scheduler.php' => config_path('cloud-scheduler.php'),
+        ], 'cloud-scheduler-config');
     }
 
     private function registerRoutes(Router $router)

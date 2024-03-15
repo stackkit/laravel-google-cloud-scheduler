@@ -11,12 +11,14 @@
         "ext-json": "*",
         "google/cloud-scheduler": "^1.6",
         "phpseclib/phpseclib": "^3.0",
-        "google/auth": "^v1.29.1"
+        "google/auth": "^v1.29.1",
+        "laravel/framework": "10.*",
+        "orchestra/testbench": "8.*",
+        "nunomaduro/collision": "7.*"
     },
     "require-dev": {
         "mockery/mockery": "^1.5",
-        "orchestra/testbench": "^8.0",
-        "nunomaduro/collision": "^7.0"
+        "laravel/pint": "^1.14"
     },
     "autoload": {
         "psr-4": {
@@ -25,7 +27,10 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "extra": {
@@ -36,7 +41,34 @@
         }
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "testbench package:test --ansi",
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": [
+            "@php vendor/bin/testbench package:discover --ansi",
+            "@php use-package-kernel.php"
+        ],
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench serve"
+        ],
+        "lint": [
+            "@php vendor/bin/phpstan analyse"
+        ],
+        "test": "testbench package:test",
+        "l10": [
+            "composer require laravel/framework:10.* orchestra/testbench:8.* nunomaduro/collision:7.* --no-interaction --no-update",
+            "composer update --prefer-stable --prefer-dist --no-interaction"
+        ],
+        "l11": [
+            "composer require laravel/framework:11.* orchestra/testbench:9.* nunomaduro/collision:8.* --no-interaction --no-update",
+            "composer update --prefer-stable --prefer-dist --no-interaction"
+        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true

@@ -3,167 +3,107 @@
 namespace Tests;
 
 use Illuminate\Console\Application as ConsoleApplication;
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Container\Container;
-use Illuminate\Log\LogManager;
-use Mockery;
-use Stackkit\LaravelGoogleCloudScheduler\CloudSchedulerException;
-use Stackkit\LaravelGoogleCloudScheduler\Command;
+use Illuminate\Support\Facades\Event;
+use PHPUnit\Framework\Attributes\Test;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
-use Stackkit\LaravelGoogleCloudScheduler\TaskHandler;
-use UnexpectedValueException;
 
 class TaskHandlerTest extends TestCase
 {
-    private $taskHandler;
-    private $fakeCommand;
-
-    /**
-     * @var LogManager
-     */
-    private $laravelLogger = null;
-
-    /**
-     * @var Mockery\Mock
-     */
-    private $log;
-
-    public function setUp(): void
-    {
-        parent::setUp();
-
-        $this->fakeCommand = Mockery::mock(Command::class)->makePartial();
-
-        config()->set('laravel-google-cloud-scheduler.app_url', 'my-application.com');
-
-        request()->headers->add(['Authorization' => 'Bearer test']);
-
-        $this->taskHandler = new TaskHandler(
-            $this->fakeCommand,
-            app(Schedule::class),
-            Container::getInstance()
-        );
-
-        $this->registerLogFake();
-    }
-
-    /**
-     * Mock the Laravel logger so we can assert the commands are or aren't called.
-     *
-     * @return void
-     */
-    private function registerLogFake()
-    {
-        if (is_null($this->laravelLogger)) {
-            $this->laravelLogger = app('log');
-        }
-
-        $this->log = Mockery::mock($this->laravelLogger);
-
-        $this->app->singleton('log', function () {
-            return $this->log;
-        });
-    }
-
-    /** @test */
+    #[Test]
     public function it_executes_the_incoming_command()
     {
+        // Arrange
         OpenIdVerificator::fake();
 
-        $this->fakeCommand->shouldReceive('capture')->andReturn('env');
+        // Act
+        $output = $this->call('POST', '/cloud-scheduler-job', content: 'php artisan env')->content();
 
-        $output = $this->taskHandler->handle();
-
-        if (version_compare(app()->version(), '9.0.0', '>=')) {
-            $this->assertStringContainsString('The application environment is [testing]', $output);
-        } else {
-            $this->assertEquals('Current application environment: testing', $output);
-        }
+        // Assert
+        $this->assertStringContainsString('The application environment is [testing]', $output);
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_a_jwt()
     {
-        $this->fakeCommand->shouldReceive('capture')->andReturn('env');
+        // Act
+        $response = $this->call('POST', '/cloud-scheduler-job', content: 'php artisan env');
 
-        request()->headers->remove('Authorization');
+        // Assert
+        $this->assertStringContainsString('Missing [Authorization] header', $response->content());
+        $response->assertStatus(500);
 
-        $this->expectException(CloudSchedulerException::class);
-
-        $this->taskHandler->handle();
     }
 
-    /** @test */
+    #[Test]
     public function it_requires_a_jwt_signed_by_google()
     {
-        $this->fakeCommand->shouldReceive('capture')->andReturn('env');
+        // Act
+        $response = $this
+            ->withToken('hey')
+            ->call('POST', '/cloud-scheduler-job', server: ['HTTP_AUTHORIZATION' => 'Bearer 123'], content: 'php artisan env');
 
-        $this->expectException(UnexpectedValueException::class);
-
-        $this->taskHandler->handle();
+        // Assert
+        $this->assertStringContainsString('Wrong number of segments', $response->content());
+        $response->assertStatus(500);
     }
 
-    /** @test */
+    #[Test]
     public function it_prevents_overlapping_if_the_command_is_scheduled_without_overlapping()
     {
         OpenIdVerificator::fake();
-
-        $this->fakeCommand->shouldReceive('capture')->andReturn('test:command');
+        Event::fake();
 
         cache()->clear();
 
-        $this->taskHandler->handle();
+        $this->assertLoggedLines(0);
 
-        $this->log->shouldHaveReceived('debug')->once();
+        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
+
+        $this->assertLoggedLines(1);
+        $this->assertLogged('TestCommand');
 
         $expression = '* * * * *';
         $command = ConsoleApplication::formatCommandString('test:command');
         $mutex = 'framework'.DIRECTORY_SEPARATOR.'schedule-'.sha1($expression.$command);
 
         cache()->add($mutex, true, 60);
-        $this->registerLogFake();
 
-        $this->taskHandler->handle();
+        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
-        $this->log->shouldNotHaveReceived('debug');
+        $this->assertLoggedLines(1);
 
         cache()->delete($mutex);
 
-        $this->registerLogFake();
+        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
-        $this->taskHandler->handle();
-
-        $this->log->shouldNotHaveReceived('debug');
+        $this->assertLoggedLines(2);
     }
 
-    /** @test */
+    #[Test]
     public function it_runs_the_before_and_after_callbacks()
     {
         OpenIdVerificator::fake();
 
-        $this->fakeCommand->shouldReceive('capture')->andReturn('test:command2');
+        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command2');
 
-        $this->taskHandler->handle();
-
-        $this->log->shouldHaveReceived()->info('log after')->once();
-        $this->log->shouldHaveReceived()->warning('log before')->once();
-        $this->log->shouldHaveReceived()->debug('did something testy')->once();
+        $this->assertLoggedLines(3);
+        $this->assertLogged('log after');
+        $this->assertLogged('log before');
+        $this->assertLogged('TestCommand2');
     }
 
-    /** @test */
+    #[Test]
     public function it_can_run_the_schedule_run_command()
     {
         OpenIdVerificator::fake();
 
-        $this->fakeCommand->shouldReceive('capture')->andReturn('schedule:run');
+        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan schedule:run');
 
-        $this->taskHandler->handle();
-
-        $this->log->shouldHaveReceived()->info('log after')->once();
-        $this->log->shouldHaveReceived()->warning('log before')->once();
-        $this->log->shouldHaveReceived()->info('log call')->once();
-
-        // @todo - can't test commands run from schedule:run because testbench has no artisan binary.
-        // Log::assertLoggedMessage('debug', 'did something testy');
+        $this->assertLoggedLines(5);
+        $this->assertLogged('TestCommand');
+        $this->assertLogged('TestCommand2');
+        $this->assertLogged('log call');
+        $this->assertLogged('log after');
+        $this->assertLogged('log before');
     }
 }
