@@ -70,7 +70,7 @@ composer require stackkit/laravel-google-cloud-scheduler
 Optionally, you may publish the configuration file:
 
 ```bash
-php artisan vendor:publish --tag-cloud-scheduler-config
+php artisan vendor:publish --tag=cloud-scheduler-config
 ```
 
 3 - Ensure PHP executable is in open_basedir. This is required for the package to run Artisan commands.
