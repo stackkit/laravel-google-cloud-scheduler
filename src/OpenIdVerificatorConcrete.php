@@ -7,13 +7,20 @@ use Illuminate\Support\Facades\Facade;
 
 class OpenIdVerificatorConcrete extends Facade
 {
+    private AccessToken $accessToken;
+
+    public function __construct(AccessToken $accessToken)
+    {
+        $this->accessToken = $accessToken;
+    }
+
     public function verify(?string $token, array $config): void
     {
         if (! $token) {
             throw new CloudSchedulerException('Missing [Authorization] header');
         }
 
-        $payload = (new AccessToken())->verify(
+        $payload = $this->accessToken->verify(
             $token,
             [
                 'audience' => config('cloud-scheduler.app_url'),
