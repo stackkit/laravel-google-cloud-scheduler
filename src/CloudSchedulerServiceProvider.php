@@ -15,7 +15,7 @@ class CloudSchedulerServiceProvider extends LaravelServiceProvider
 
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/cloud-scheduler.php', 'cloud-scheduler-config');
+        $this->mergeConfigFrom(__DIR__.'/../config/cloud-scheduler.php', 'cloud-scheduler');
 
         $this->publishes([
             __DIR__.'/../config/cloud-scheduler.php' => config_path('cloud-scheduler.php'),
