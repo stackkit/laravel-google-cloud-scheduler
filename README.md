@@ -8,6 +8,8 @@
 
 </p>
 
+<p align="center"><sub>Companion packages: <a href="https://github.com/stackkit/laravel-google-cloud-tasks-queue">Cloud Tasks</a>, <a href="https://github.com/marickvantuil/laravel-google-cloud-logging">Cloud Logging</a></sub></p>
+
 # Introduction
 
 This package allows you to use Google Cloud Scheduler to schedule Laravel commands.
