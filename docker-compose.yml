@@ -1,0 +1,7 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    volumes:
+      - .:/var/www/html
