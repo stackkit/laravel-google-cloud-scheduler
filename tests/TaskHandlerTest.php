@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Illuminate\Console\Application as ConsoleApplication;
+use Illuminate\Console\Scheduling\Event as SchedulingEvent;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
@@ -64,7 +65,7 @@ class TaskHandlerTest extends TestCase
 
         $expression = '* * * * *';
         $command = ConsoleApplication::formatCommandString('test:command');
-        $mutex = 'framework'.DIRECTORY_SEPARATOR.'schedule-'.sha1($expression.$command);
+        $mutex = 'framework'.DIRECTORY_SEPARATOR.'schedule-'.sha1($expression. SchedulingEvent::normalizeCommand($command));
 
         cache()->add($mutex, true, 60);
 
