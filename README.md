@@ -50,7 +50,7 @@ The package will pick up on the scheduled settings and ping OhDear after the com
 
 # Requirements
 
-This package requires Laravel 10 or 11.
+This package requires Laravel 11 or 12.
 
 # Installation
 
@@ -128,9 +128,6 @@ public function boot()
 
 To circumvent this, please add the following to `bootstrap/app.php`
 
-<details>
-<summary>Laravel 11</summary>
-    
 ```php
 <?php
 
@@ -156,41 +153,10 @@ return Application::configure(basePath: dirname(__DIR__))
     })->create();
 
 ```
-</details>
-
-<details>
-<summary>Laravel 10</summary>
-
-```php
-<?php
-
-/*
-|--------------------------------------------------------------------------
-| Create The Application
-|--------------------------------------------------------------------------
-|
-| The first thing we will do is create a new Laravel application instance
-| which serves as the "glue" for all the components of Laravel, and is
-| the IoC container for the system binding all of the various parts.
-|
-*/
-
-$app = new Illuminate\Foundation\Application(
-    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
-);
-
-+ if (($_SERVER['REQUEST_URI'] ?? '') === '/cloud-scheduler-job') {
-+     $_ENV['APP_RUNNING_IN_CONSOLE'] = true;
-+ }
-```
-</details>
 
 6 - Optional: whitelist route for maintenance mode
 
 If you want to allow jobs to keep running if the application is down (`php artisan down`), update the following:
-
-<details>
-<summary>Laravel 11</summary>
 
 ```php
 return Application::configure(basePath: dirname(__DIR__))
@@ -212,31 +178,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
 
 ```
-</details>
-<details>
-<summary>Laravel 10</summary>
-
-```php
-<?php
-
-namespace App\Http\Middleware;
-
-use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance as Middleware;
-
-class PreventRequestsDuringMaintenance extends Middleware
-{
-    /**
-     * The URIs that should be reachable while maintenance mode is enabled.
-     *
-     * @var array
-     */
-    protected $except = [
-+        '/cloud-scheduler-job',
-    ];
-}
-
-```
-</details>
 
 # Cloud Scheduler Example
 
