@@ -11,7 +11,8 @@
         "ext-json": "*",
         "google/cloud-scheduler": "^2.0",
         "google/auth": "^v1.29.1",
-        "laravel/framework": "^11.0|^12.0"
+        "laravel/framework": "^11.0|^12.0",
+        "symfony/cache": "^7.2"
     },
     "require-dev": {
         "orchestra/testbench": "^9.0|^10.0",
