@@ -13,6 +13,6 @@ class OpenIdVerificator extends Facade
 
     public static function fake(): void
     {
-        self::swap(new OpenIdVerificatorFake());
+        self::swap(new OpenIdVerificatorFake);
     }
 }
