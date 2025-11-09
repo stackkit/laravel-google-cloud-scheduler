@@ -64,13 +64,12 @@ class TaskHandlerTest extends TestCase
 
         $mutex = head(app(Schedule::class)->events())->mutexName();
 
-        cache()->add($mutex, true, 60);
-
         $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
         $this->assertLoggedLines(1);
 
-        cache()->delete($mutex);
+        $event = head(app(Schedule::class)->events());
+        $event->mutex->forget($event);
 
         $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
