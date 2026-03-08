@@ -94,6 +94,10 @@ class TaskHandler
     {
         $parts = explode(ARTISAN_BINARY, $command);
 
+        if (! isset($parts[1])) {
+            return null;
+        }
+
         return substr($parts[1], 2, strlen($parts[1]));
     }
 
