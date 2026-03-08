@@ -48,11 +48,17 @@ class TaskHandler
                 return null;
             }
 
-            $scheduledCommand->callBeforeCallbacks($this->container);
+            try {
+                $scheduledCommand->callBeforeCallbacks($this->container);
 
-            Artisan::call($command);
+                Artisan::call($command);
 
-            $scheduledCommand->callAfterCallbacks($this->container);
+                $scheduledCommand->callAfterCallbacks($this->container);
+            } finally {
+                if ($scheduledCommand->withoutOverlapping) {
+                    $scheduledCommand->mutex->forget($scheduledCommand);
+                }
+            }
         } else {
             Artisan::call($command);
         }

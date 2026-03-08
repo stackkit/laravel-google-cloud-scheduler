@@ -55,22 +55,28 @@ class TaskHandlerTest extends TestCase
 
         cache()->clear();
 
+        $event = head(app(Schedule::class)->events());
+
+        // Simulate a command already running by pre-creating the mutex.
+        $event->mutex->create($event);
+
         $this->assertLoggedLines(0);
 
+        // Should be blocked because the mutex is held.
+        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
+
+        $this->assertLoggedLines(0);
+
+        // Release the mutex (simulating the in-flight command finishing).
+        $event->mutex->forget($event);
+
+        // Should now run and automatically release the mutex when done.
         $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
         $this->assertLoggedLines(1);
         $this->assertLogged('TestCommand');
 
-        $mutex = head(app(Schedule::class)->events())->mutexName();
-
-        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
-
-        $this->assertLoggedLines(1);
-
-        $event = head(app(Schedule::class)->events());
-        $event->mutex->forget($event);
-
+        // Should run again, proving the mutex was released automatically after the previous run.
         $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
         $this->assertLoggedLines(2);
