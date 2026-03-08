@@ -6,6 +6,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
+use RuntimeException;
 
 class TaskHandlerTest extends TestCase
 {
@@ -93,6 +94,27 @@ class TaskHandlerTest extends TestCase
         $this->assertLogged('log after');
         $this->assertLogged('log before');
         $this->assertLogged('TestCommand2');
+    }
+
+    #[Test]
+    public function it_releases_the_mutex_when_the_command_throws_an_exception()
+    {
+        OpenIdVerificator::fake();
+
+        // Register a command that throws during its before-callback (inside the try block).
+        app(Schedule::class)
+            ->command('env')
+            ->withoutOverlapping()
+            ->before(fn () => throw new RuntimeException('forced failure'));
+
+        // First call: before-callback throws, but the finally block must still release the mutex.
+        $first = $this->call('POST', '/cloud-scheduler-job', content: 'php artisan env');
+        $first->assertStatus(500);
+
+        // Second call: if the mutex was NOT released we would get a 200 with empty body.
+        // Getting another 500 proves the finally block ran and the mutex was released.
+        $second = $this->call('POST', '/cloud-scheduler-job', content: 'php artisan env');
+        $second->assertStatus(500);
     }
 
     #[Test]
