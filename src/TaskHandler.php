@@ -45,7 +45,7 @@ class TaskHandler
             $scheduledCommand = $this->getScheduledCommand($command);
 
             if ($scheduledCommand->withoutOverlapping && ! $scheduledCommand->mutex->create($scheduledCommand)) {
-                return null;
+                return '';
             }
 
             try {
