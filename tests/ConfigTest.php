@@ -3,7 +3,6 @@
 namespace Tests;
 
 use PHPUnit\Framework\Attributes\Test;
-use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 
 class ConfigTest extends TestCase
 {

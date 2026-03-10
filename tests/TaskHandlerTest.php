@@ -5,8 +5,8 @@ namespace Tests;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
-use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 use RuntimeException;
+use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 
 class TaskHandlerTest extends TestCase
 {
