@@ -5,6 +5,7 @@ namespace Tests;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Stackkit\LaravelGoogleCloudScheduler\OpenIdVerificator;
 
 class TaskHandlerTest extends TestCase
@@ -55,22 +56,28 @@ class TaskHandlerTest extends TestCase
 
         cache()->clear();
 
+        $event = head(app(Schedule::class)->events());
+
+        // Simulate a command already running by pre-creating the mutex.
+        $event->mutex->create($event);
+
         $this->assertLoggedLines(0);
 
+        // Should be blocked because the mutex is held.
+        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
+
+        $this->assertLoggedLines(0);
+
+        // Release the mutex (simulating the in-flight command finishing).
+        $event->mutex->forget($event);
+
+        // Should now run and automatically release the mutex when done.
         $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
         $this->assertLoggedLines(1);
         $this->assertLogged('TestCommand');
 
-        $mutex = head(app(Schedule::class)->events())->mutexName();
-
-        $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
-
-        $this->assertLoggedLines(1);
-
-        $event = head(app(Schedule::class)->events());
-        $event->mutex->forget($event);
-
+        // Should run again, proving the mutex was released automatically after the previous run.
         $this->call('POST', '/cloud-scheduler-job', content: 'php artisan test:command');
 
         $this->assertLoggedLines(2);
@@ -87,6 +94,27 @@ class TaskHandlerTest extends TestCase
         $this->assertLogged('log after');
         $this->assertLogged('log before');
         $this->assertLogged('TestCommand2');
+    }
+
+    #[Test]
+    public function it_releases_the_mutex_when_the_command_throws_an_exception()
+    {
+        OpenIdVerificator::fake();
+
+        // Register a command that throws during its before-callback (inside the try block).
+        app(Schedule::class)
+            ->command('env')
+            ->withoutOverlapping()
+            ->before(fn () => throw new RuntimeException('forced failure'));
+
+        // First call: before-callback throws, but the finally block must still release the mutex.
+        $first = $this->call('POST', '/cloud-scheduler-job', content: 'php artisan env');
+        $first->assertStatus(500);
+
+        // Second call: if the mutex was NOT released we would get a 200 with empty body.
+        // Getting another 500 proves the finally block ran and the mutex was released.
+        $second = $this->call('POST', '/cloud-scheduler-job', content: 'php artisan env');
+        $second->assertStatus(500);
     }
 
     #[Test]

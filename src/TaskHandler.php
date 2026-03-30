@@ -45,14 +45,20 @@ class TaskHandler
             $scheduledCommand = $this->getScheduledCommand($command);
 
             if ($scheduledCommand->withoutOverlapping && ! $scheduledCommand->mutex->create($scheduledCommand)) {
-                return null;
+                return '';
             }
 
-            $scheduledCommand->callBeforeCallbacks($this->container);
+            try {
+                $scheduledCommand->callBeforeCallbacks($this->container);
 
-            Artisan::call($command);
+                Artisan::call($command);
 
-            $scheduledCommand->callAfterCallbacks($this->container);
+                $scheduledCommand->callAfterCallbacks($this->container);
+            } finally {
+                if ($scheduledCommand->withoutOverlapping) {
+                    $scheduledCommand->mutex->forget($scheduledCommand);
+                }
+            }
         } else {
             Artisan::call($command);
         }
@@ -87,6 +93,10 @@ class TaskHandler
     private function commandWithoutArtisan($command)
     {
         $parts = explode(ARTISAN_BINARY, $command);
+
+        if (! isset($parts[1])) {
+            return null;
+        }
 
         return substr($parts[1], 2, strlen($parts[1]));
     }
