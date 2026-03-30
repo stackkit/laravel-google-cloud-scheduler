@@ -50,7 +50,7 @@ The package will pick up on the scheduled settings and ping OhDear after the com
 
 # Requirements
 
-This package requires Laravel 11 or 12.
+This package requires Laravel 12 or 13.
 
 # Installation
 
