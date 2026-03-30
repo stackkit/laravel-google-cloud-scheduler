@@ -11,13 +11,12 @@
         "ext-json": "*",
         "google/cloud-scheduler": "^2.0",
         "google/auth": "^v1.29.1",
-        "laravel/framework": "^11.0|^12.0",
+        "laravel/framework": "^12.0|^13.0",
         "symfony/cache": "^7.2",
         "phpseclib/phpseclib": "^3.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.0|^10.0",
-        "nunomaduro/collision": "^8.0",
+        "orchestra/testbench": "^10.0|^11.0",
         "laravel/pint": "^1.14"
     },
     "autoload": {
