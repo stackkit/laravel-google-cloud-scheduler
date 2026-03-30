@@ -11,12 +11,12 @@
         "ext-json": "*",
         "google/cloud-scheduler": "^2.0",
         "google/auth": "^v1.29.1",
-        "laravel/framework": "^12.0|^13.0",
+        "laravel/framework": "13.*",
         "symfony/cache": "^7.2",
-        "phpseclib/phpseclib": "^3.0"
+        "phpseclib/phpseclib": "^3.0",
+        "orchestra/testbench": "11.*"
     },
     "require-dev": {
-        "orchestra/testbench": "^10.0|^11.0",
         "laravel/pint": "^1.14"
     },
     "autoload": {
@@ -60,12 +60,12 @@
             "@php vendor/bin/phpstan analyse"
         ],
         "test": "testbench package:test",
-        "l10": [
-            "composer require laravel/framework:10.* orchestra/testbench:8.* nunomaduro/collision:7.* --no-interaction --no-update",
+        "l12": [
+            "composer require laravel/framework:12.* orchestra/testbench:10.* --no-interaction --no-update",
             "composer update --prefer-stable --prefer-dist --no-interaction"
         ],
-        "l11": [
-            "composer require laravel/framework:11.* orchestra/testbench:9.* nunomaduro/collision:8.* --no-interaction --no-update",
+        "l13": [
+            "composer require laravel/framework:13.* orchestra/testbench:11.* --no-interaction --no-update",
             "composer update --prefer-stable --prefer-dist --no-interaction"
         ]
     },
